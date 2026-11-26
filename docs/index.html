@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
-  <meta name="theme-color" content="#183d36">
-  <title>Una sorpresa per te · Secret Santa</title>
+  <meta name="theme-color" content="#f5f2eb">
+  <title>Secret Santa</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -17,34 +17,38 @@
   </div>
   <main class="card">
     <div class="card-top" aria-hidden="true"><span>✦</span><span>✦</span><span>✦</span></div>
-    <div class="eyebrow"><span>✦</span> UN PICCOLO SEGRETO DI NATALE <span>✦</span></div>
-    <div class="gift-scene" aria-hidden="true">
-      <span class="spark spark-a">✦</span><span class="spark spark-b">✧</span>
-      <div class="gift">
-        <div class="bow bow-left"></div><div class="bow bow-right"></div>
-        <div class="gift-lid"></div><div class="gift-box"></div>
-      </div>
-    </div>
-    <h1>La magia è<br><em>nel dare.</em></h1>
-    <p class="intro">Una sorpresa speciale ti aspetta sotto l'albero.</p>
+    <div class="eyebrow">SECRET SANTA</div>
+    <h1>Il tuo<br><em>Secret Santa</em></h1>
+    <p class="intro">Controlla il tuo nome e apri il regalo.</p>
     <div class="divider" aria-hidden="true"><span>✦</span></div>
     <section class="message" aria-live="polite">
       <p id="loading" class="loading">Prepariamo la tua sorpresa…</p>
       <div id="ready" hidden>
         <p class="small-label">QUESTO INVITO È PER</p>
         <p id="giver" class="person"></p>
-        <p class="hint">Sei tu? Assicurati che nessuno stia guardando, poi scopri a chi farai il regalo.</p>
-        <button id="reveal" type="button">Scopri il tuo abbinamento <span aria-hidden="true">→</span></button>
-      </div>
-      <div id="revealed" hidden>
-        <p class="small-label">IL TUO REGALO È PER</p>
-        <p id="recipient" class="person recipient"></p>
-        <p class="hint">Shhh… mantieni il segreto e rendi speciale il suo Natale!</p>
+        <div class="gift-scene">
+          <button id="reveal" class="gift-button" type="button" disabled aria-label="Apri il regalo">
+            <span id="gift" class="gift gift-red" aria-hidden="true">
+              <span class="gift-lid"><span class="bow bow-left"></span><span class="bow bow-right"></span></span>
+              <span class="gift-box"></span>
+            </span>
+          </button>
+          <div id="revealed" class="result" hidden>
+            <p class="small-label">IL TUO REGALO È PER</p>
+            <p id="recipient" class="person recipient"></p>
+          </div>
+        </div>
+        <div class="bot-status" role="status">
+          <span class="bot" aria-hidden="true"><span class="hat"></span><span class="bot-face"><i></i><i></i></span><span class="beard"></span></span>
+          <span class="bot-copy"><strong>TUNEBOT</strong><span id="status-text">TuneBot sta randomizzando il Natale…</span></span>
+          <span id="spinner" class="spinner" aria-hidden="true"></span>
+        </div>
+        <p id="instruction" class="instruction" hidden>Il tuo regalo è pronto. Clicca per aprirlo.</p>
       </div>
       <p id="error" class="error" role="alert" hidden></p>
     </section>
     <div class="bottom-rule" aria-hidden="true"><span>✦</span></div>
-    <p class="footer">CON UN PIZZICO DI MAGIA <span>✦</span> SECRET SANTA</p>
+    <p class="footer">SECRET SANTA</p>
   </main>
   <script>
     (() => {
@@ -74,10 +78,31 @@
           byId('giver').textContent = assignment.giver;
           byId('loading').hidden = true;
           byId('ready').hidden = false;
+          const variants = ['gift-red', 'gift-green', 'gift-blue', 'gift-gold'];
+          const messages = ['TuneBot sta randomizzando il Natale…', 'TuneBot sta incartando la sorpresa…', 'TuneBot sta sistemando i nastri…', 'TuneBot sta preparando il regalo…'];
+          const gift = byId('gift');
+          const setGift = index => { gift.classList.remove(...variants); gift.classList.add(variants[index]); };
+          let step = 0;
+          const cycle = setInterval(() => {
+            step++;
+            setGift(step % variants.length);
+            byId('status-text').textContent = messages[step % messages.length];
+          }, 800);
+          setTimeout(() => {
+            clearInterval(cycle);
+            setGift(Math.floor(Math.random() * variants.length));
+            byId('spinner').hidden = true;
+            byId('status-text').textContent = 'Tutto pronto!';
+            byId('instruction').hidden = false;
+            byId('reveal').disabled = false;
+          }, 5000);
           byId('reveal').addEventListener('click', () => {
+            byId('reveal').disabled = true;
+            gift.classList.add('opened');
+            byId('instruction').hidden = true;
+            byId('status-text').textContent = 'Abbinamento svelato.';
             byId('recipient').textContent = assignment.recipient;
-            byId('ready').hidden = true;
-            byId('revealed').hidden = false;
+            setTimeout(() => { byId('revealed').hidden = false; }, 450);
           }, {once: true});
         } catch (_) {
           showError('Non riusciamo ad aprire questo invito. Controlla il link completo oppure chiedi aiuto a chi organizza.');
