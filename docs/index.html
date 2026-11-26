@@ -9,14 +9,7 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="night-sky" aria-hidden="true">
-    <span class="flake f1">✦</span><span class="flake f2">✧</span>
-    <span class="flake f3">✦</span><span class="flake f4">✧</span>
-    <span class="flake f5">✦</span><span class="flake f6">✧</span>
-    <span class="flake f7">✦</span><span class="flake f8">✧</span>
-  </div>
   <main class="card">
-    <div class="card-top" aria-hidden="true"><span>✦</span><span>✦</span><span>✦</span></div>
     <div class="eyebrow">SECRET SANTA</div>
     <h1>Il tuo<br><em>Secret Santa</em></h1>
     <p class="intro">Controlla il tuo nome e apri il regalo.</p>
@@ -28,10 +21,9 @@
         <p id="giver" class="person"></p>
         <div class="gift-scene">
           <button id="reveal" class="gift-button" type="button" disabled aria-label="Apri il regalo">
-            <span id="gift" class="gift gift-red" aria-hidden="true">
-              <span class="gift-lid"><span class="bow bow-left"></span><span class="bow bow-right"></span></span>
-              <span class="gift-box"></span>
-            </span>
+            <span class="gift gift-red slot-left" aria-hidden="true"><span class="gift-lid"></span><span class="gift-box"></span></span>
+            <span class="gift gift-green slot-center" aria-hidden="true"><span class="gift-lid"></span><span class="gift-box"></span></span>
+            <span class="gift gift-blue slot-right" aria-hidden="true"><span class="gift-lid"></span><span class="gift-box"></span></span>
           </button>
           <div id="revealed" class="result" hidden>
             <p class="small-label">IL TUO REGALO È PER</p>
@@ -39,10 +31,10 @@
           </div>
         </div>
         <div class="bot-status" role="status">
-          <span class="bot" aria-hidden="true"><span class="hat"></span><span class="bot-face"><i></i><i></i></span><span class="beard"></span></span>
-          <span class="bot-copy"><strong>TUNEBOT</strong><span id="status-text">TuneBot sta randomizzando il Natale…</span></span>
-          <span id="spinner" class="spinner" aria-hidden="true"></span>
+          <span class="bot" aria-hidden="true">🎅🤖</span>
+          <span class="bot-copy"><strong>TuneBOT:</strong><span id="status-text">Sto randomizzando il Natale…</span></span>
         </div>
+        <div id="progress" class="progress" role="progressbar" aria-label="Preparazione del regalo" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progress-fill"></span></div>
         <p id="instruction" class="instruction" hidden>Il tuo regalo è pronto. Clicca per aprirlo.</p>
       </div>
       <p id="error" class="error" role="alert" hidden></p>
@@ -78,27 +70,39 @@
           byId('giver').textContent = assignment.giver;
           byId('loading').hidden = true;
           byId('ready').hidden = false;
-          const variants = ['gift-red', 'gift-green', 'gift-blue', 'gift-gold'];
-          const messages = ['TuneBot sta randomizzando il Natale…', 'TuneBot sta incartando la sorpresa…', 'TuneBot sta sistemando i nastri…', 'TuneBot sta preparando il regalo…'];
-          const gift = byId('gift');
-          const setGift = index => { gift.classList.remove(...variants); gift.classList.add(variants[index]); };
+          const messages = ['Sto randomizzando il Natale…', 'Sto incartando la sorpresa…', 'Sto sistemando i nastri…', 'Sto preparando il regalo…'];
+          const gifts = Array.from(document.querySelectorAll('.gift'));
+          const slots = ['slot-left', 'slot-center', 'slot-right'];
+          const setPosition = offset => gifts.forEach((gift, index) => {
+            gift.classList.remove(...slots);
+            gift.classList.add(slots[(index + offset) % slots.length]);
+          });
           let step = 0;
+          const started = performance.now();
           const cycle = setInterval(() => {
             step++;
-            setGift(step % variants.length);
+            setPosition(step);
             byId('status-text').textContent = messages[step % messages.length];
-          }, 800);
+          }, 700);
+          const progress = setInterval(() => {
+            const percent = Math.min(100, Math.round((performance.now() - started) / 50));
+            byId('progress-fill').style.width = percent + '%';
+            byId('progress').setAttribute('aria-valuenow', percent);
+          }, 50);
           setTimeout(() => {
             clearInterval(cycle);
-            setGift(Math.floor(Math.random() * variants.length));
-            byId('spinner').hidden = true;
+            clearInterval(progress);
+            setPosition(Math.floor(Math.random() * gifts.length));
+            byId('progress-fill').style.width = '100%';
+            byId('progress').setAttribute('aria-valuenow', '100');
+            byId('reveal').classList.add('finished');
             byId('status-text').textContent = 'Tutto pronto!';
             byId('instruction').hidden = false;
             byId('reveal').disabled = false;
           }, 5000);
           byId('reveal').addEventListener('click', () => {
             byId('reveal').disabled = true;
-            gift.classList.add('opened');
+            byId('reveal').classList.add('opened');
             byId('instruction').hidden = true;
             byId('status-text').textContent = 'Abbinamento svelato.';
             byId('recipient').textContent = assignment.recipient;
