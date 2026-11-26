@@ -21,9 +21,12 @@
         <p id="giver" class="person"></p>
         <div class="gift-scene">
           <button id="reveal" class="gift-button" type="button" disabled aria-label="Apri il regalo">
-            <span class="gift gift-red slot-left" aria-hidden="true"><span class="gift-lid"></span><span class="gift-box"></span></span>
-            <span class="gift gift-green slot-center" aria-hidden="true"><span class="gift-lid"></span><span class="gift-box"></span></span>
-            <span class="gift gift-blue slot-right" aria-hidden="true"><span class="gift-lid"></span><span class="gift-box"></span></span>
+            <span class="gift gift-red" aria-hidden="true"><span class="gift-lid"></span><span class="gift-box"></span></span>
+            <span class="gift gift-green" aria-hidden="true"><span class="gift-lid"></span><span class="gift-box"></span></span>
+            <span class="gift gift-blue" aria-hidden="true"><span class="gift-lid"></span><span class="gift-box"></span></span>
+            <span class="gift gift-gold" aria-hidden="true"><span class="gift-lid"></span><span class="gift-box"></span></span>
+            <span class="gift gift-purple" aria-hidden="true"><span class="gift-lid"></span><span class="gift-box"></span></span>
+            <span class="gift gift-pink" aria-hidden="true"><span class="gift-lid"></span><span class="gift-box"></span></span>
           </button>
           <div id="revealed" class="result" hidden>
             <p class="small-label">IL TUO REGALO È PER</p>
@@ -31,11 +34,11 @@
           </div>
         </div>
         <div class="bot-status" role="status">
-          <span class="bot" aria-hidden="true">🎅🤖</span>
+          <span class="bot" aria-hidden="true">🤖</span>
           <span class="bot-copy"><strong>TuneBOT:</strong><span id="status-text">Sto randomizzando il Natale…</span></span>
         </div>
         <div id="progress" class="progress" role="progressbar" aria-label="Preparazione del regalo" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progress-fill"></span></div>
-        <p id="instruction" class="instruction" hidden>Il tuo regalo è pronto. Clicca per aprirlo.</p>
+        <p id="instruction" class="instruction" hidden>Abbinamento trovato! Clicca sul regalo per scoprirlo.</p>
       </div>
       <p id="error" class="error" role="alert" hidden></p>
     </section>
@@ -73,15 +76,18 @@
           const messages = ['Sto randomizzando il Natale…', 'Sto incartando la sorpresa…', 'Sto sistemando i nastri…', 'Sto preparando il regalo…'];
           const gifts = Array.from(document.querySelectorAll('.gift'));
           const slots = ['slot-left', 'slot-center', 'slot-right'];
-          const setPosition = offset => gifts.forEach((gift, index) => {
+          const setPosition = center => gifts.forEach((gift, index) => {
             gift.classList.remove(...slots);
-            gift.classList.add(slots[(index + offset) % slots.length]);
+            if (index === center) gift.classList.add('slot-center');
+            else if (index === (center + 1) % gifts.length) gift.classList.add('slot-right');
+            else if (index === (center + gifts.length - 1) % gifts.length) gift.classList.add('slot-left');
           });
+          setPosition(0);
           let step = 0;
           const started = performance.now();
           const cycle = setInterval(() => {
             step++;
-            setPosition(step);
+            setPosition(step % gifts.length);
             byId('status-text').textContent = messages[step % messages.length];
           }, 700);
           const progress = setInterval(() => {
@@ -96,7 +102,7 @@
             byId('progress-fill').style.width = '100%';
             byId('progress').setAttribute('aria-valuenow', '100');
             byId('reveal').classList.add('finished');
-            byId('status-text').textContent = 'Tutto pronto!';
+            byId('status-text').textContent = 'Abbinamento trovato!';
             byId('instruction').hidden = false;
             byId('reveal').disabled = false;
           }, 5000);
