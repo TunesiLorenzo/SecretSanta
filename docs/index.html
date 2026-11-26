@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Secret Santa</title>
+  <style>
+    body { font: 18px system-ui, sans-serif; background: #f7f2e8; color: #183d33; display: grid; place-items: center; min-height: 90vh; margin: 0; }
+    main { background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 8px 30px #0002; max-width: 28rem; margin: 1rem; text-align: center; }
+    button { background: #a62436; color: white; border: 0; border-radius: .5rem; padding: .8rem 1.4rem; font: inherit; cursor: pointer; }
+    #result { font-weight: bold; font-size: 1.4rem; overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Secret Santa</h1>
+  <p>Make sure nobody is looking, then reveal your assignment.</p>
+  <button id="reveal">Reveal my recipient</button>
+  <p id="result" role="status"></p>
+</main>
+<script>
+  const result = document.querySelector('#result');
+  const decode = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - s.length % 4) % 4)), c => c.charCodeAt(0));
+  document.querySelector('#reveal').addEventListener('click', async () => {
+    try {
+      const params = new URLSearchParams(location.search);
+      const draw = params.get('draw');
+      const id = params.get('id');
+      const key = location.hash.slice(1);
+      if (!/^[a-f0-9]{32}$/.test(draw || '') || !/^[a-f0-9]{32}$/.test(id || '') || !/^[A-Za-z0-9_-]{43}$/.test(key)) throw Error('Invalid link');
+      const response = await fetch('draws/' + draw + '.json', {cache: 'no-store'});
+      if (!response.ok) throw Error('Draw not found');
+      const record = (await response.json())[id];
+      if (!record) throw Error('Assignment not found');
+      const cryptoKey = await crypto.subtle.importKey('raw', decode(key), 'AES-GCM', false, ['decrypt']);
+      const plaintext = await crypto.subtle.decrypt({name: 'AES-GCM', iv: decode(record.nonce)}, cryptoKey, decode(record.ciphertext));
+      const assignment = JSON.parse(new TextDecoder().decode(plaintext));
+      result.textContent = assignment.giver + ', you are giving a gift to ' + assignment.recipient + '!';
+      document.querySelector('#reveal').hidden = true;
+    } catch (_) {
+      result.textContent = 'Could not open this assignment. Check the full link or ask the organizer.';
+    }
+  });
+</script>
+</body>
+</html>
